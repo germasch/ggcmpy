@@ -30,6 +30,8 @@ public:
     }
   }
 
+  std::size_t size() const { return t_.size(); }
+
   double t(std::size_t i) const { return t_[i]; }
   double3 r(std::size_t i) const { return r_[i]; }
   double3 u(std::size_t i) const { return u_[i]; }
@@ -45,6 +47,11 @@ public:
   to_tuple() const
   {
     return std::make_tuple(t_, r_, u_);
+  }
+
+  std::string repr() const
+  {
+    return "particles(size=" + std::to_string(size()) + ")";
   }
 
 private:
