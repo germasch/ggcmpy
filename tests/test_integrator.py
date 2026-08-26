@@ -115,6 +115,7 @@ def test_boris_integrator_dipole():
     "integrator",
     [
         integrator.boris_python,
+        integrator.boris_cxx,
     ],
 )
 def test_boris_integrator_multiple(integrator):
