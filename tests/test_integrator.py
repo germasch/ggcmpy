@@ -110,7 +110,7 @@ def test_boris_integrator_dipole():
     return fig
 
 
-@pytest.mark.mpl_image_compare
+@pytest.mark.mpl_image_compare(filename="test_boris_integrator_multiple.png")
 @pytest.mark.parametrize(
     "integrator",
     [
