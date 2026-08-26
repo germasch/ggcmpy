@@ -108,3 +108,49 @@ def test_boris_integrator_dipole():
     fig.tight_layout()
 
     return fig
+
+
+@pytest.mark.mpl_image_compare
+@pytest.mark.parametrize(
+    "integrator",
+    [
+        integrator.boris_python,
+    ],
+)
+def test_boris_integrator_multiple(integrator):
+    """multiple particle gyrating in a uniform magnetic field"""
+    q = constants.e  # [C]
+    m = constants.m_e  # [kg]
+    B_0 = 1e-8  # [T]
+    fields = emfields.uniform_cxx(B_0=np.array([0.0, 0.0, B_0]))
+
+    prts = []
+    for v_0 in [0.2 * constants.c, 0.5 * constants.c]:
+        x0 = np.array([0.0, 0.0, 0.0])  # [m]
+        v0 = np.array([0.0, v_0, 0.0])  # [m/s]
+        gamma = 1.0 / np.sqrt(1 - (np.linalg.norm(v0) / constants.c) ** 2)
+        u0 = gamma * v0 / constants.c
+
+        prts.append([0.0, *x0, *u0])
+
+    prts_df = pd.DataFrame(
+        np.array(prts), columns=["time", "x", "y", "z", "ux", "uy", "uz"]
+    )
+
+    om_ce = gyro_frequency(B_0, q, m, gamma)
+    # r_ce = m * np.linalg.norm(u0) * constants.c / (np.abs(q) * B_0)  # [m]
+
+    t_final = 2 * np.pi / om_ce  # one gyroperiod # [s]
+    dt_max_gyro = 1.0 / 100
+
+    boris = integrator(fields, q, m)
+    df = boris.integrate(
+        prts_df, t_final=t_final, dt_max_gyro=dt_max_gyro, snapshot_interval_steps=1
+    )
+
+    fig, ax = plt.subplots()
+    df.plot.scatter(x="x", y="y", c="time", style=".-", ax=ax)
+    ax.set_aspect("equal")
+    fig.tight_layout()
+
+    return fig

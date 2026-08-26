@@ -56,31 +56,32 @@ class boris_push_python:
 
         assert t_final is not None or max_steps is not None
 
-        step = 0
-        while True:
-            if t_final is not None and prts_df.loc[0, "time"] >= t_final:  # type: ignore[operator]
-                break
+        for n in range(len(prts_df)):
+            step = 0
+            while True:
+                if t_final is not None and prts_df.loc[n, "time"] >= t_final:  # type: ignore[operator]
+                    break
 
-            if max_steps is not None and step >= max_steps:
-                break
+                if max_steps is not None and step >= max_steps:
+                    break
 
-            prts_df.loc[0, ["x", "y", "z"]] = self.push_x(
-                prts_df.loc[0, ["x", "y", "z"]].to_numpy(),
-                prts_df.loc[0, ["ux", "uy", "uz"]].to_numpy(),
-                0.5 * dt,
-            )
-            B = self._fields.B(prts_df.loc[0, ["x", "y", "z"]].to_numpy())
-            E = self._fields.E(prts_df.loc[0, ["x", "y", "z"]].to_numpy())
-            prts_df.loc[0, ["ux", "uy", "uz"]] = self.push_u(
-                prts_df.iloc[0][["ux", "uy", "uz"]].to_numpy(), E, B, qprime * dt
-            )
-            prts_df.loc[0, ["x", "y", "z"]] = self.push_x(
-                prts_df.loc[0, ["x", "y", "z"]].to_numpy(),
-                prts_df.loc[0, ["ux", "uy", "uz"]].to_numpy(),
-                0.5 * dt,
-            )
-            prts_df.loc[0, "time"] += dt
-            step += 1
+                prts_df.loc[n, ["x", "y", "z"]] = self.push_x(
+                    prts_df.loc[n, ["x", "y", "z"]].to_numpy(),
+                    prts_df.loc[n, ["ux", "uy", "uz"]].to_numpy(),
+                    0.5 * dt,
+                )
+                B = self._fields.B(prts_df.loc[n, ["x", "y", "z"]].to_numpy())
+                E = self._fields.E(prts_df.loc[n, ["x", "y", "z"]].to_numpy())
+                prts_df.loc[n, ["ux", "uy", "uz"]] = self.push_u(
+                    prts_df.iloc[n][["ux", "uy", "uz"]].to_numpy(), E, B, qprime * dt
+                )
+                prts_df.loc[n, ["x", "y", "z"]] = self.push_x(
+                    prts_df.loc[n, ["x", "y", "z"]].to_numpy(),
+                    prts_df.loc[n, ["ux", "uy", "uz"]].to_numpy(),
+                    0.5 * dt,
+                )
+                prts_df.loc[n, "time"] += dt
+                step += 1
 
         return prts_df
 
