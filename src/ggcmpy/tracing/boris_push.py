@@ -46,13 +46,6 @@ class boris_push_python:
         prts_df = prts_df.copy()  # don't modify input
 
         qprime = 0.5 * self._q / self._m
-        B = self._fields.B(prts_df.loc[0, ["x", "y", "z"]].to_numpy())
-        u = prts_df.loc[0, ["ux", "uy", "uz"]].to_numpy()
-        gamma = np.sqrt(1 + np.linalg.norm(u) ** 2)
-        om_c = 2.0 * np.abs(qprime) * np.linalg.norm(B) / gamma
-        dt = dt_max_gyro * 2.0 * np.pi / om_c
-        if dt_max is not None:
-            dt = min(dt_max, dt)
 
         assert t_final is not None or max_steps is not None
 
@@ -65,13 +58,25 @@ class boris_push_python:
                 if max_steps is not None and step >= max_steps:
                     break
 
+                B = self._fields.B(prts_df.loc[n, ["x", "y", "z"]].to_numpy())
+                u = prts_df.loc[n, ["ux", "uy", "uz"]].to_numpy()
+                gamma = np.sqrt(1 + np.linalg.norm(u) ** 2)
+                om_c = 2.0 * np.abs(qprime) * np.linalg.norm(B) / gamma
+                dt = dt_max_gyro * 2.0 * np.pi / om_c
+                if dt_max is not None:
+                    dt = min(dt_max, dt)
+
                 prts_df.loc[n, ["x", "y", "z"]] = self.push_x(
                     prts_df.loc[n, ["x", "y", "z"]].to_numpy(),
                     prts_df.loc[n, ["ux", "uy", "uz"]].to_numpy(),
                     0.5 * dt,
                 )
-                B = self._fields.B(prts_df.loc[n, ["x", "y", "z"]].to_numpy())
-                E = self._fields.E(prts_df.loc[n, ["x", "y", "z"]].to_numpy())
+                B = np.asarray(
+                    self._fields.B(prts_df.loc[n, ["x", "y", "z"]].to_numpy())
+                )
+                E = np.asarray(
+                    self._fields.E(prts_df.loc[n, ["x", "y", "z"]].to_numpy())
+                )
                 prts_df.loc[n, ["ux", "uy", "uz"]] = self.push_u(
                     prts_df.iloc[n][["ux", "uy", "uz"]].to_numpy(), E, B, qprime * dt
                 )

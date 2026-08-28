@@ -110,6 +110,49 @@ def test_boris_integrator_dipole():
     return fig
 
 
+def test_boris_integrator_snapshot():
+    """
+    Integrate particle gyrating / bouncing in a dipole magnetic field.
+
+    Taking snapshots at different intervals should not change the result of the integration.
+    """
+
+    fields = emfields.dipole_cxx(m=constants.dipole_moment_earth)  # [A m^2]
+
+    q = -constants.e
+    m = constants.m_e
+    x0 = np.array([5.0 * R_E, 0.0, 0.0])  # [m]
+    B_0 = np.linalg.norm(fields.B(x0))
+    E_kin = 1000.0 * 1e3 * constants.e  # 1000 keV in J
+    gamma = 1.0 + E_kin / (m * constants.c**2)
+    v_e = constants.c * np.sqrt(1.0 - 1.0 / gamma**2)
+
+    v0 = np.array([0.0, v_e / np.sqrt(2.0), v_e / np.sqrt(2.0)])  # [m/s]
+    u0 = gamma * v0 / constants.c
+
+    om_ce = gyro_frequency(B_0, q, m, gamma)
+    r_ce = m * np.linalg.norm(u0) * constants.c / (np.abs(q) * B_0)  # [m]
+
+    print(f"B={B_0} [T] om_ce={om_ce:.2f} [1/s] r_ce={r_ce:.2f} [m]")
+
+    t_ce = 2.0 * np.pi / om_ce  # [s]
+    t_final = 1.0 * t_ce  # [s]
+
+    prts = pd.DataFrame(
+        np.array([[0.0, *x0, *u0]]), columns=["time", "x", "y", "z", "ux", "uy", "uz"]
+    )
+
+    boris = ggcmpy.tracing.integrator.boris_python(fields, q, m)
+    df = boris.integrate(prts, t_final=t_final, snapshot_interval_steps=1)
+    df2 = boris.integrate(prts, t_final=t_final, snapshot_interval_steps=10)
+    df = df.iloc[::10]
+    df2 = df2.iloc[
+        : len(df)
+    ]  # this one might have an additional final step, which we drop here
+
+    assert np.allclose(df.to_numpy(), df2.to_numpy())
+
+
 @pytest.mark.mpl_image_compare(filename="test_boris_integrator_multiple.png")
 @pytest.mark.parametrize(
     "integrator",
