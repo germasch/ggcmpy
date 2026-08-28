@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import itertools
-
 import matplotlib.pyplot as plt  # type: ignore[import-not-found]
 import numpy as np
 import numpy.typing as npt
@@ -14,16 +12,14 @@ from ggcmpy.tracing import emfields, integrator
 
 R_E = constants.radius_earth  # [m]
 
-_id = itertools.count()
-
 
 def make_particle(
-    x0: npt.ArrayLike, v0: npt.ArrayLike
+    id: float, x0: npt.ArrayLike, v0: npt.ArrayLike
 ) -> tuple[float, np.ndarray, np.ndarray]:
     x0, v0 = np.asarray(x0), np.asarray(v0)
     gamma = 1.0 / np.sqrt(1 - (np.linalg.norm(v0) / constants.c) ** 2)
     u0 = gamma * v0 / constants.c
-    return next(_id), 0.0, *x0, *u0
+    return id, 0.0, *x0, *u0
 
 
 def to_prts_df(particles: list[tuple[float, np.ndarray, np.ndarray]]) -> pd.DataFrame:
@@ -57,7 +53,7 @@ def test_boris_integrator_uniform(integrator):
     fields = emfields.uniform_cxx(B_0=np.array([0.0, 0.0, B_0]))
     x0 = np.array([0.0, 0.0, 0.0])  # [m]
     v0 = np.array([0.0, v_0, 0.0])  # [m/s]
-    prts_df = to_prts_df([make_particle(x0, v0)])
+    prts_df = to_prts_df([make_particle(0, x0, v0)])
 
     u0 = prts_df.loc[0, ["ux", "uy", "uz"]].to_numpy()
     om_ce = gyro_frequency(B_0, q, m, u0)
@@ -98,7 +94,7 @@ def test_boris_integrator_dipole():
     v_e = constants.c * np.sqrt(1.0 - 1.0 / gamma**2)
 
     v0 = np.array([0.0, v_e / np.sqrt(2.0), v_e / np.sqrt(2.0)])  # [m/s]
-    prts = to_prts_df([make_particle(x0, v0)])
+    prts = to_prts_df([make_particle(0, x0, v0)])
     u0 = prts.loc[0, ["ux", "uy", "uz"]].to_numpy()
     om_ce = gyro_frequency(B_0, q, m, u0)
     r_ce = gyro_radius(B_0, q, m, u0)
@@ -153,7 +149,7 @@ def test_boris_integrator_snapshot(integrator):
     v_e = constants.c * np.sqrt(1.0 - 1.0 / gamma**2)
 
     v0 = np.array([0.0, v_e / np.sqrt(2.0), v_e / np.sqrt(2.0)])  # [m/s]
-    prts = to_prts_df([make_particle(x0, v0)])
+    prts = to_prts_df([make_particle(0, x0, v0)])
 
     u0 = prts.loc[0, ["ux", "uy", "uz"]].to_numpy()
     om_ce = gyro_frequency(B_0, q, m, u0)
@@ -192,8 +188,8 @@ def test_boris_integrator_multiple(integrator):
 
     prts_df = to_prts_df(
         [
-            make_particle([0.0, 0.0, 0.0], [0.0, v_0, 0.0])
-            for v_0 in [0.3 * constants.c, 0.5 * constants.c]
+            make_particle(id, [0.0, 0.0, 0.0], [0.0, v_0, 0.0])
+            for id, v_0 in enumerate([0.3 * constants.c, 0.5 * constants.c])
         ]
     )
 
@@ -208,7 +204,15 @@ def test_boris_integrator_multiple(integrator):
     )
 
     fig, ax = plt.subplots()
-    df.plot.scatter(x="x", y="y", c="time", style=".-", ax=ax)
+    df.plot.scatter(
+        x="x",
+        y="y",
+        c="id",
+        style=".",
+        ax=ax,
+        cmap="viridis",
+        title="Particle trajectories",
+    )
     ax.set_aspect("equal")
     fig.tight_layout()
 
