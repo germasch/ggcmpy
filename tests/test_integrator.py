@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import matplotlib.pyplot as plt  # type: ignore[import-not-found]
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 import pytest
 
@@ -12,8 +13,28 @@ from ggcmpy.tracing import emfields, integrator
 R_E = constants.radius_earth  # [m]
 
 
-def gyro_frequency(B: float, q: float, m: float, gamma: float) -> float:
+def make_particle(
+    x0: npt.ArrayLike, v0: npt.ArrayLike
+) -> tuple[float, np.ndarray, np.ndarray]:
+    x0, v0 = np.asarray(x0), np.asarray(v0)
+    gamma = 1.0 / np.sqrt(1 - (np.linalg.norm(v0) / constants.c) ** 2)
+    u0 = gamma * v0 / constants.c
+    return 0.0, *x0, *u0
+
+
+def to_prts_df(particles: list[tuple[float, np.ndarray, np.ndarray]]) -> pd.DataFrame:
+    return pd.DataFrame(
+        np.array(particles), columns=["time", "x", "y", "z", "ux", "uy", "uz"]
+    )
+
+
+def gyro_frequency(B: float, q: float, m: float, u: np.ndarray) -> float:
+    gamma = np.sqrt(1.0 + np.linalg.norm(u) ** 2)
     return np.abs(q) * B / (gamma * m)  # type: ignore[no-any-return]
+
+
+def gyro_radius(B: float, q: float, m: float, u: np.ndarray) -> float:
+    return m * np.linalg.norm(u) * constants.c / (np.abs(q) * B)  # type: ignore[no-any-return]
 
 
 @pytest.mark.parametrize(
@@ -32,17 +53,14 @@ def test_boris_integrator_uniform(integrator):
     fields = emfields.uniform_cxx(B_0=np.array([0.0, 0.0, B_0]))
     x0 = np.array([0.0, 0.0, 0.0])  # [m]
     v0 = np.array([0.0, v_0, 0.0])  # [m/s]
-    gamma = 1.0 / np.sqrt(1 - (np.linalg.norm(v0) / constants.c) ** 2)
-    u0 = gamma * v0 / constants.c
+    prts_df = to_prts_df([make_particle(x0, v0)])
 
-    om_ce = gyro_frequency(B_0, q, m, gamma)
-    r_ce = m * np.linalg.norm(u0) * constants.c / (np.abs(q) * B_0)  # [m]
+    u0 = prts_df.loc[0, ["ux", "uy", "uz"]].to_numpy()
+    om_ce = gyro_frequency(B_0, q, m, u0)
+    r_ce = gyro_radius(B_0, q, m, u0)
 
     t_final = 2 * np.pi / om_ce  # one gyroperiod # [s]
     steps = 100
-    prts_df = pd.DataFrame(
-        np.array([[0.0, *x0, *u0]]), columns=["time", "x", "y", "z", "ux", "uy", "uz"]
-    )
 
     boris = integrator(fields, q, m)
     df = boris.integrate(
@@ -76,25 +94,21 @@ def test_boris_integrator_dipole():
     v_e = constants.c * np.sqrt(1.0 - 1.0 / gamma**2)
 
     v0 = np.array([0.0, v_e / np.sqrt(2.0), v_e / np.sqrt(2.0)])  # [m/s]
-    u0 = gamma * v0 / constants.c
-
-    om_ce = gyro_frequency(B_0, q, m, gamma)
-    r_ce = m * np.linalg.norm(u0) * constants.c / (np.abs(q) * B_0)  # [m]
+    prts = to_prts_df([make_particle(x0, v0)])
+    u0 = prts.loc[0, ["ux", "uy", "uz"]].to_numpy()
+    om_ce = gyro_frequency(B_0, q, m, u0)
+    r_ce = gyro_radius(B_0, q, m, u0)
 
     print(f"B={B_0} [T] om_ce={om_ce:.2f} [1/s] r_ce={r_ce:.2f} [m]")
 
     t_ce = 2.0 * np.pi / om_ce  # [s]
     t_final = 100.0 * t_ce  # [s]
 
-    prts = pd.DataFrame(
-        np.array([[0.0, *x0, *u0]]), columns=["time", "x", "y", "z", "ux", "uy", "uz"]
-    )
-
     boris = ggcmpy.tracing.integrator.boris_cxx(fields, q, m)
     df = boris.integrate(prts, t_final=t_final, snapshot_interval_steps=1)
 
     B_final = np.linalg.norm(fields.B(df.loc[df.index[-1], ["x", "y", "z"]].to_numpy()))
-    om_ce_final = gyro_frequency(B_final, q, m, gamma)
+    om_ce_final = gyro_frequency(B_final, q, m, u0)
     t_ce_final = 2.0 * np.pi / om_ce_final
 
     fig, axs = plt.subplots(1, 3, figsize=(15, 5))
@@ -135,19 +149,16 @@ def test_boris_integrator_snapshot(integrator):
     v_e = constants.c * np.sqrt(1.0 - 1.0 / gamma**2)
 
     v0 = np.array([0.0, v_e / np.sqrt(2.0), v_e / np.sqrt(2.0)])  # [m/s]
-    u0 = gamma * v0 / constants.c
+    prts = to_prts_df([make_particle(x0, v0)])
 
-    om_ce = gyro_frequency(B_0, q, m, gamma)
-    r_ce = m * np.linalg.norm(u0) * constants.c / (np.abs(q) * B_0)  # [m]
+    u0 = prts.loc[0, ["ux", "uy", "uz"]].to_numpy()
+    om_ce = gyro_frequency(B_0, q, m, u0)
+    r_ce = gyro_radius(B_0, q, m, u0)
 
     print(f"B={B_0} [T] om_ce={om_ce:.2f} [1/s] r_ce={r_ce:.2f} [m]")
 
     t_ce = 2.0 * np.pi / om_ce  # [s]
     t_final = 1.0 * t_ce  # [s]
-
-    prts = pd.DataFrame(
-        np.array([[0.0, *x0, *u0]]), columns=["time", "x", "y", "z", "ux", "uy", "uz"]
-    )
 
     boris = integrator(fields, q, m)
     df = boris.integrate(prts, t_final=t_final, snapshot_interval_steps=1)
@@ -175,21 +186,14 @@ def test_boris_integrator_multiple(integrator):
     B_0 = 1e-8  # [T]
     fields = emfields.uniform_cxx(B_0=np.array([0.0, 0.0, B_0]))
 
-    prts = []
-    for v_0 in [0.2 * constants.c, 0.5 * constants.c]:
-        x0 = np.array([0.0, 0.0, 0.0])  # [m]
-        v0 = np.array([0.0, v_0, 0.0])  # [m/s]
-        gamma = 1.0 / np.sqrt(1 - (np.linalg.norm(v0) / constants.c) ** 2)
-        u0 = gamma * v0 / constants.c
-
-        prts.append([0.0, *x0, *u0])
-
-    prts_df = pd.DataFrame(
-        np.array(prts), columns=["time", "x", "y", "z", "ux", "uy", "uz"]
+    prts_df = to_prts_df(
+        [
+            make_particle([0.0, 0.0, 0.0], [0.0, v_0, 0.0])
+            for v_0 in [0.3 * constants.c, 0.5 * constants.c]
+        ]
     )
 
-    om_ce = gyro_frequency(B_0, q, m, gamma)
-    # r_ce = m * np.linalg.norm(u0) * constants.c / (np.abs(q) * B_0)  # [m]
+    om_ce = gyro_frequency(B_0, q, m, prts_df.loc[0, ["ux", "uy", "uz"]].to_numpy())
 
     t_final = 2 * np.pi / om_ce  # one gyroperiod # [s]
     dt_max_gyro = 1.0 / 100
