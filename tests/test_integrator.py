@@ -110,7 +110,14 @@ def test_boris_integrator_dipole():
     return fig
 
 
-def test_boris_integrator_snapshot():
+@pytest.mark.parametrize(
+    "integrator",
+    [
+        integrator.boris_python,
+        integrator.boris_cxx,
+    ],
+)
+def test_boris_integrator_snapshot(integrator):
     """
     Integrate particle gyrating / bouncing in a dipole magnetic field.
 
@@ -142,7 +149,7 @@ def test_boris_integrator_snapshot():
         np.array([[0.0, *x0, *u0]]), columns=["time", "x", "y", "z", "ux", "uy", "uz"]
     )
 
-    boris = ggcmpy.tracing.integrator.boris_python(fields, q, m)
+    boris = integrator(fields, q, m)
     df = boris.integrate(prts, t_final=t_final, snapshot_interval_steps=1)
     df2 = boris.integrate(prts, t_final=t_final, snapshot_interval_steps=10)
     df = df.iloc[::10]
