@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import itertools
+
 import matplotlib.pyplot as plt  # type: ignore[import-not-found]
 import numpy as np
 import numpy.typing as npt
@@ -12,6 +14,8 @@ from ggcmpy.tracing import emfields, integrator
 
 R_E = constants.radius_earth  # [m]
 
+_id = itertools.count()
+
 
 def make_particle(
     x0: npt.ArrayLike, v0: npt.ArrayLike
@@ -19,12 +23,12 @@ def make_particle(
     x0, v0 = np.asarray(x0), np.asarray(v0)
     gamma = 1.0 / np.sqrt(1 - (np.linalg.norm(v0) / constants.c) ** 2)
     u0 = gamma * v0 / constants.c
-    return 0.0, *x0, *u0
+    return next(_id), 0.0, *x0, *u0
 
 
 def to_prts_df(particles: list[tuple[float, np.ndarray, np.ndarray]]) -> pd.DataFrame:
     return pd.DataFrame(
-        np.array(particles), columns=["time", "x", "y", "z", "ux", "uy", "uz"]
+        np.array(particles), columns=["id", "time", "x", "y", "z", "ux", "uy", "uz"]
     )
 
 

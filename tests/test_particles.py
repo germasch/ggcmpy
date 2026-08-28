@@ -15,10 +15,12 @@ def test_particles_cxx():
             "ux": [1.0, 0.0, 0.0],
             "uy": [0.0, 1.0, 0.0],
             "uz": [0.0, 0.0, 1.0],
+            "id": [0, 1, 2],
         }
     )
     prts = particles_cxx(prts_df)
 
     assert len(prts_df) == 3
     assert repr(prts) == "particles(size=3)"
-    assert prts_df.equals(prts.to_dataframe())
+    prts_df2 = prts.to_dataframe()
+    assert prts_df.equals(prts_df2)
