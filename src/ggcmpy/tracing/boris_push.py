@@ -168,28 +168,6 @@ class boris_push_cxx(_openggcm.tracing.boris):  # type: ignore[misc]
         dt_max_gyro: float = 0.1,
         snapshot_interval_steps: int | None = None,
     ) -> pd.DataFrame:
-        snapshots = [prts_df]
-
-        while prts_df.iloc[0].time < t_final:
-            prts_df = self._push(
-                prts_df,
-                t_final=t_final,
-                max_steps=snapshot_interval_steps,
-                dt_max=dt_max,
-                dt_max_gyro=dt_max_gyro,
-            )
-            snapshots.append(prts_df.copy())
-
-        return pd.concat(snapshots, ignore_index=True)
-
-    def _push(
-        self,
-        prts_df: pd.DataFrame,
-        t_final: float | None = None,
-        max_steps: int | None = None,
-        dt_max: float | None = None,
-        dt_max_gyro: float = 0.1,
-    ) -> pd.DataFrame:
         """
         Pushes the particles in `prts_df` from their current state.
 
@@ -200,12 +178,18 @@ class boris_push_cxx(_openggcm.tracing.boris):  # type: ignore[misc]
             dt_max (float | None): Maximum time step for the integration.
             dt_max_gyro (float): Maximum time step as fraction of the gyroperiod.
         """
+        snapshots_df = [prts_df]
         prts = particles_cxx_from_pandas(prts_df)
-        super().push(
-            prts,
-            t_final=t_final,
-            max_steps=max_steps,
-            dt_max=dt_max,
-            dt_max_gyro=dt_max_gyro,
-        )
-        return particles_cxx_to_pandas(prts)
+
+        while prts_df.iloc[0].time < t_final:
+            super().push(
+                prts,
+                t_final=t_final,
+                max_steps=snapshot_interval_steps,
+                dt_max=dt_max,
+                dt_max_gyro=dt_max_gyro,
+            )
+            prts_df = particles_cxx_to_pandas(prts)
+            snapshots_df.append(particles_cxx_to_pandas(prts))
+
+        return pd.concat(snapshots_df, ignore_index=True)
