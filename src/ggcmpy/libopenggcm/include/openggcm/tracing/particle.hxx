@@ -32,6 +32,14 @@ public:
     }
   }
 
+  void push_back(std::size_t id, double t, const double3 &r, const double3 &u)
+  {
+    id_.push_back(id);
+    t_.push_back(t);
+    r_.push_back(r);
+    u_.push_back(u);
+  }
+
   std::size_t size() const { return t_.size(); }
 
   double t(std::size_t i) const { return t_[i]; }
