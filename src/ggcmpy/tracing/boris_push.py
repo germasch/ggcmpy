@@ -128,6 +128,16 @@ class boris_push_python:
         return up + dq * E / constants.c
 
 
+def particles_cxx_to_pandas(prts: _openggcm.tracing.particles) -> pd.DataFrame:
+    _id, t, r, u = prts.to_tuple()
+    df = pd.DataFrame(
+        np.column_stack((t, r, u)),
+        columns=("time", "x", "y", "z", "ux", "uy", "uz"),
+    )
+    df["id"] = _id
+    return df
+
+
 class particles_cxx(_openggcm.tracing.particles):  # type: ignore[misc]
     """Wrapper class for the C++ particles class, providing a convenient interface for particle data management."""
 
@@ -142,15 +152,6 @@ class particles_cxx(_openggcm.tracing.particles):  # type: ignore[misc]
 
     def __init__(self, df: pd.DataFrame) -> None:
         pass
-
-    def to_dataframe(self) -> pd.DataFrame:
-        _id, t, r, u = self.to_tuple()
-        df = pd.DataFrame(
-            np.column_stack((t, r, u)),
-            columns=("time", "x", "y", "z", "ux", "uy", "uz"),
-        )
-        df["id"] = _id
-        return df
 
 
 class boris_push_cxx(_openggcm.tracing.boris):  # type: ignore[misc]
@@ -182,4 +183,4 @@ class boris_push_cxx(_openggcm.tracing.boris):  # type: ignore[misc]
             dt_max=dt_max,
             dt_max_gyro=dt_max_gyro,
         )
-        return prts.to_dataframe()
+        return particles_cxx_to_pandas(prts)

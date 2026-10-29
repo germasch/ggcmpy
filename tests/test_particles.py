@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from ggcmpy.tracing.boris_push import particles_cxx
+from ggcmpy.tracing.boris_push import particles_cxx, particles_cxx_to_pandas
 
 
 def test_particles_cxx():
@@ -22,5 +22,5 @@ def test_particles_cxx():
 
     assert len(prts_df) == 3
     assert repr(prts) == "particles(size=3)"
-    prts_df2 = prts.to_dataframe()
+    prts_df2 = particles_cxx_to_pandas(prts)
     assert prts_df.equals(prts_df2)
