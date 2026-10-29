@@ -80,12 +80,11 @@ public:
     for (int n = 0; n < prts.size(); ++n)
     {
       int step = 0;
+      double t = prts.t(n);
+      double3 x = prts.r(n);
+      double3 u = prts.u(n);
       while (true)
       {
-        double &t = prts.t(n);
-        double3 &x = prts.r(n);
-        double3 &u = prts.u(n);
-
         if (snapshot_interval_steps.has_value() &&
             step % snapshot_interval_steps.value() == 0)
         {
@@ -116,6 +115,10 @@ public:
         t += dt;
         step++;
       }
+
+      prts.t(n) = t;
+      prts.r(n) = x;
+      prts.u(n) = u;
     }
 
     return snapshots;
