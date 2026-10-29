@@ -89,7 +89,7 @@ public:
         if (snapshot_interval_steps.has_value() &&
             step % snapshot_interval_steps.value() == 0)
         {
-          snapshots.push_back(n, t, x, u);
+          snapshots.push_back(prts.id(n), t, x, u);
         }
 
         double3 B = emfields_.get().B(x);

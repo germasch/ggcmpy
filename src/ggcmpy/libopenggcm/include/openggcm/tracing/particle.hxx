@@ -42,6 +42,7 @@ public:
 
   std::size_t size() const { return t_.size(); }
 
+  std::size_t id(std::size_t i) const { return id_[i]; }
   double t(std::size_t i) const { return t_[i]; }
   double3 r(std::size_t i) const { return r_[i]; }
   double3 u(std::size_t i) const { return u_[i]; }
