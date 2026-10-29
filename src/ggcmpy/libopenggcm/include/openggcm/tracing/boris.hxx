@@ -63,10 +63,10 @@ public:
     u = up + dq * E / constants::c;
   }
 
-  void push(particles &prts, particles &snapshots,
-            std::optional<double> t_final, std::optional<int> max_steps,
-            std::optional<double> dt_max, double dt_max_gyro,
-            std::optional<int> snapshot_interval_steps) const
+  particles push(particles &prts, std::optional<double> t_final,
+                 std::optional<int> max_steps, std::optional<double> dt_max,
+                 double dt_max_gyro,
+                 std::optional<int> snapshot_interval_steps) const
   {
     double qprime = 0.5 * q_ / m_;
 
@@ -76,6 +76,7 @@ public:
           "boris::push: either t_final or max_steps must be specified");
     }
 
+    particles snapshots = particles();
     for (int n = 0; n < prts.size(); ++n)
     {
       int step = 0;
@@ -84,6 +85,12 @@ public:
         double &t = prts.t(n);
         double3 &x = prts.r(n);
         double3 &u = prts.u(n);
+
+        if (snapshot_interval_steps.has_value() &&
+            step % snapshot_interval_steps.value() == 0)
+        {
+          snapshots.push_back(n, t, x, u);
+        }
 
         double3 B = emfields_.get().B(x);
         double gamma = std::sqrt(1.0 + norm2(u));
@@ -109,8 +116,9 @@ public:
         t += dt;
         step++;
       }
-      snapshots.push_back(n, prts.t(n), prts.r(n), prts.u(n));
     }
+
+    return snapshots;
   }
 
 private:
