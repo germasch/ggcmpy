@@ -166,7 +166,7 @@ class boris_push_cxx(_openggcm.tracing.boris):  # type: ignore[misc]
         max_steps: int | None = None,
         dt_max: float | None = None,
         dt_max_gyro: float = 0.1,
-        snapshot_interval_steps: int | None = None,
+        **kwargs,
     ) -> pd.DataFrame:
         """
         Pushes the particles in `prts_df` from their current state.
@@ -187,7 +187,7 @@ class boris_push_cxx(_openggcm.tracing.boris):  # type: ignore[misc]
             max_steps=max_steps,
             dt_max=dt_max,
             dt_max_gyro=dt_max_gyro,
-            snapshot_interval_steps=snapshot_interval_steps,
+            **kwargs,
         )
 
         return particles_cxx_to_pandas(snapshots)

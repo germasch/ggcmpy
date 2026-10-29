@@ -65,8 +65,8 @@ public:
 
   particles push(particles &prts, std::optional<double> t_final,
                  std::optional<int> max_steps, std::optional<double> dt_max,
-                 double dt_max_gyro,
-                 std::optional<int> snapshot_interval_steps) const
+                 double dt_max_gyro, std::optional<int> snapshot_interval_steps,
+                 bool snapshot_on_equator_crossing) const
   {
     double qprime = 0.5 * q_ / m_;
 
@@ -91,6 +91,8 @@ public:
           snapshots.push_back(prts.id(n), t, x, u);
         }
 
+        double3 x_prev = x, u_prev = u;
+
         double3 B = emfields_.get().B(x);
         double gamma = std::sqrt(1.0 + norm2(u));
         double om_c = 2.0 * std::abs(qprime) * norm(B) / gamma;
@@ -114,6 +116,15 @@ public:
         push_x(x, u, .5 * dt);
         t += dt;
         step++;
+
+        if (snapshot_on_equator_crossing &&
+            (x_prev[2] * x[2] < 0.0 || x_prev[2] == 0.0))
+        {
+          double s1 = x[2] / (x[2] - x_prev[2]);
+          double s2 = 1.0 - s1;
+          snapshots.push_back(n, (t - dt) * s1 + t * s2, x_prev * s1 + x * s2,
+                              u_prev * s1 + u * s2);
+        }
       }
 
       prts.t(n) = t;

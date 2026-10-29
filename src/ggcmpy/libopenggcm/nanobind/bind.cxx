@@ -296,5 +296,6 @@ NB_MODULE(_openggcm, m)
       .def("__repr__", &boris::repr)
       .def("push", &boris::push, "prts"_a, "t_final"_a = nb::none(),
            "max_steps"_a = nb::none(), "dt_max"_a = nb::none(),
-           "dt_max_gyro"_a = 0.1, "snapshot_interval_steps"_a = nb::none());
+           "dt_max_gyro"_a = 0.1, "snapshot_interval_steps"_a = nb::none(),
+           "snapshot_on_equator_crossing"_a = false);
 }
