@@ -203,6 +203,7 @@ def test_boris_integrator_multiple(integrator):
         prts_df, t_final=t_final, dt_max_gyro=dt_max_gyro, snapshot_interval_steps=1
     )
 
+    df = df.sort_values(by=["id"]).reset_index(drop=True)
     fig, ax = plt.subplots()
     df.plot.scatter(
         x="x",
