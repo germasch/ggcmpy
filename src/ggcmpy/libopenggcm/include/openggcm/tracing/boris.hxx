@@ -63,9 +63,10 @@ public:
     u = up + dq * E / constants::c;
   }
 
-  void push(particles &prts, std::optional<double> t_final,
-            std::optional<int> max_steps, std::optional<double> dt_max,
-            double dt_max_gyro) const
+  void push(particles &prts, particles &snapshots,
+            std::optional<double> t_final, std::optional<int> max_steps,
+            std::optional<double> dt_max, double dt_max_gyro,
+            std::optional<int> snapshot_interval_steps) const
   {
     double qprime = 0.5 * q_ / m_;
 
@@ -108,6 +109,7 @@ public:
         t += dt;
         step++;
       }
+      snapshots.push_back(n, prts.t(n), prts.r(n), prts.u(n));
     }
   }
 

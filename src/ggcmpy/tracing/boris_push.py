@@ -177,19 +177,20 @@ class boris_push_cxx(_openggcm.tracing.boris):  # type: ignore[misc]
             max_steps (int | None): Maximum number of steps to take.
             dt_max (float | None): Maximum time step for the integration.
             dt_max_gyro (float): Maximum time step as fraction of the gyroperiod.
+            snapshot_interval_steps (int | None): Interval between snapshots.
         """
-        snapshots_df = [prts_df]
+        snapshots = particles_cxx_from_pandas(prts_df)
         prts = particles_cxx_from_pandas(prts_df)
 
         while prts_df.iloc[0].time < t_final:
             super().push(
                 prts,
+                snapshots,
                 t_final=t_final,
                 max_steps=snapshot_interval_steps,
                 dt_max=dt_max,
                 dt_max_gyro=dt_max_gyro,
             )
             prts_df = particles_cxx_to_pandas(prts)
-            snapshots_df.append(particles_cxx_to_pandas(prts))
 
-        return pd.concat(snapshots_df, ignore_index=True)
+        return particles_cxx_to_pandas(snapshots)
