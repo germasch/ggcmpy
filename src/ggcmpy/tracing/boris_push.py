@@ -29,6 +29,29 @@ class boris_push_python:
         self,
         prts_df: pd.DataFrame,
         t_final: float | None = None,
+        max_steps: int | None = None,  # noqa: ARG002
+        dt_max: float | None = None,
+        dt_max_gyro: float = 0.1,
+        snapshot_interval_steps: int | None = None,
+    ) -> pd.DataFrame:
+        snapshots = [prts_df]
+
+        while prts_df.iloc[0].time < t_final:
+            prts_df = self._push(
+                prts_df,
+                t_final=t_final,
+                max_steps=snapshot_interval_steps,
+                dt_max=dt_max,
+                dt_max_gyro=dt_max_gyro,
+            )
+            snapshots.append(prts_df.copy())
+
+        return pd.concat(snapshots, ignore_index=True)
+
+    def _push(
+        self,
+        prts_df: pd.DataFrame,
+        t_final: float | None = None,
         max_steps: int | None = None,
         dt_max: float | None = None,
         dt_max_gyro: float = 0.1,
@@ -151,6 +174,29 @@ class boris_push_cxx(_openggcm.tracing.boris):  # type: ignore[misc]
     """Wrapper class for the C++ boris class, providing a convenient interface for particle integration."""
 
     def push(
+        self,
+        prts_df: pd.DataFrame,
+        t_final: float | None = None,
+        max_steps: int | None = None,  # noqa: ARG002
+        dt_max: float | None = None,
+        dt_max_gyro: float = 0.1,
+        snapshot_interval_steps: int | None = None,
+    ) -> pd.DataFrame:
+        snapshots = [prts_df]
+
+        while prts_df.iloc[0].time < t_final:
+            prts_df = self._push(
+                prts_df,
+                t_final=t_final,
+                max_steps=snapshot_interval_steps,
+                dt_max=dt_max,
+                dt_max_gyro=dt_max_gyro,
+            )
+            snapshots.append(prts_df.copy())
+
+        return pd.concat(snapshots, ignore_index=True)
+
+    def _push(
         self,
         prts_df: pd.DataFrame,
         t_final: float | None = None,

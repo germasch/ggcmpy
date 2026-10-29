@@ -49,19 +49,13 @@ class boris_base:
     ) -> pd.DataFrame:
         boris = self._boris_push_cls(self._fields, self._q, self._m)
 
-        snapshots = [prts_df]
-
-        while prts_df.iloc[0].time < t_final:
-            prts_df = boris.push(
-                prts_df,
-                t_final=t_final,
-                max_steps=snapshot_interval_steps,
-                dt_max=dt_max,
-                dt_max_gyro=dt_max_gyro,
-            )
-            snapshots.append(prts_df.copy())
-
-        return pd.concat(snapshots, ignore_index=True)
+        return boris.push(  # type: ignore[no-any-return]
+            prts_df,
+            t_final=t_final,
+            dt_max=dt_max,
+            dt_max_gyro=dt_max_gyro,
+            snapshot_interval_steps=snapshot_interval_steps,
+        )
 
 
 class boris_python(boris_base):
