@@ -33,7 +33,7 @@ class boris_push_python:
         dt_max: float | None = None,
         dt_max_gyro: float = 0.1,
         snapshot_interval_steps: int | None = None,
-    ) -> pd.DataFrame:
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Pushes the particles in `prts_df` from their current state.
 
@@ -97,7 +97,7 @@ class boris_push_python:
                 prts_df.loc[n, "time"] += dt
                 step += 1
 
-        return pd.concat(snapshots, ignore_index=True)
+        return prts_df, pd.concat(snapshots, ignore_index=True)
 
     @staticmethod
     def push_x(x: np.ndarray, u: np.ndarray, dt: float) -> np.ndarray:
@@ -167,7 +167,7 @@ class boris_push_cxx(_openggcm.tracing.boris):  # type: ignore[misc]
         dt_max: float | None = None,
         dt_max_gyro: float = 0.1,
         **kwargs,
-    ) -> pd.DataFrame:
+    ) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Pushes the particles in `prts_df` from their current state.
 
@@ -190,4 +190,4 @@ class boris_push_cxx(_openggcm.tracing.boris):  # type: ignore[misc]
             **kwargs,
         )
 
-        return particles_cxx_to_pandas(snapshots)
+        return particles_cxx_to_pandas(prts), particles_cxx_to_pandas(snapshots)

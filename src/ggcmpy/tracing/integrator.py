@@ -49,9 +49,11 @@ class boris_base:
     ) -> pd.DataFrame:
         boris = self._boris_push_cls(self._fields, self._q, self._m)
 
-        return boris.push(  # type: ignore[no-any-return]
+        prts_df, snapshots_df = boris.push(
             prts_df, t_final=t_final, dt_max=dt_max, dt_max_gyro=dt_max_gyro, **kwargs
         )
+
+        return snapshots_df  # type: ignore[no-any-return]
 
 
 class boris_python(boris_base):
