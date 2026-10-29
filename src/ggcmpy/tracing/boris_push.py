@@ -29,32 +29,10 @@ class boris_push_python:
         self,
         prts_df: pd.DataFrame,
         t_final: float | None = None,
-        max_steps: int | None = None,  # noqa: ARG002
-        dt_max: float | None = None,
-        dt_max_gyro: float = 0.1,
-        snapshot_interval_steps: int | None = None,
-    ) -> pd.DataFrame:
-        snapshots = [prts_df]
-
-        while prts_df.iloc[0].time < t_final:
-            prts_df = self._push(
-                prts_df,
-                t_final=t_final,
-                max_steps=snapshot_interval_steps,
-                dt_max=dt_max,
-                dt_max_gyro=dt_max_gyro,
-            )
-            snapshots.append(prts_df.copy())
-
-        return pd.concat(snapshots, ignore_index=True)
-
-    def _push(
-        self,
-        prts_df: pd.DataFrame,
-        t_final: float | None = None,
         max_steps: int | None = None,
         dt_max: float | None = None,
         dt_max_gyro: float = 0.1,
+        snapshot_interval_steps: int | None = None,
     ) -> pd.DataFrame:
         """
         Pushes the particles in `prts_df` from their current state.
@@ -66,11 +44,13 @@ class boris_push_python:
             dt_max (float | None): Maximum time step for the integration.
             dt_max_gyro (float): Maximum time step as fraction of the gyroperiod.
         """
-        prts_df = prts_df.copy()  # don't modify input
 
         qprime = 0.5 * self._q / self._m
 
         assert t_final is not None or max_steps is not None
+
+        prts_df = prts_df.copy()  # don't modify input
+        snapshots = []
 
         for n in range(len(prts_df)):
             step = 0
@@ -80,6 +60,12 @@ class boris_push_python:
 
                 if max_steps is not None and step >= max_steps:
                     break
+
+                if (
+                    snapshot_interval_steps is not None
+                    and step % snapshot_interval_steps == 0
+                ):
+                    snapshots.append(prts_df.copy())
 
                 B = self._fields.B(prts_df.loc[n, ["x", "y", "z"]].to_numpy())
                 u = prts_df.loc[n, ["ux", "uy", "uz"]].to_numpy()
@@ -111,7 +97,7 @@ class boris_push_python:
                 prts_df.loc[n, "time"] += dt
                 step += 1
 
-        return prts_df
+        return pd.concat(snapshots, ignore_index=True)
 
     @staticmethod
     def push_x(x: np.ndarray, u: np.ndarray, dt: float) -> np.ndarray:
