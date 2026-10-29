@@ -138,20 +138,13 @@ def particles_cxx_to_pandas(prts: _openggcm.tracing.particles) -> pd.DataFrame:
     return df
 
 
-class particles_cxx(_openggcm.tracing.particles):  # type: ignore[misc]
-    """Wrapper class for the C++ particles class, providing a convenient interface for particle data management."""
-
-    def __new__(cls, df: pd.DataFrame) -> particles_cxx:
-        return super().__new__(  # type: ignore[no-any-return] # pylint: disable=E1121
-            cls,
-            df["id"].to_numpy(),
-            df["time"].to_numpy(),
-            df[["x", "y", "z"]].to_numpy(),
-            df[["ux", "uy", "uz"]].to_numpy(),
-        )
-
-    def __init__(self, df: pd.DataFrame) -> None:
-        pass
+def particles_cxx_from_pandas(df: pd.DataFrame) -> _openggcm.tracing.particles:
+    return _openggcm.tracing.particles(
+        df["id"].to_numpy(),
+        df["time"].to_numpy(),
+        df[["x", "y", "z"]].to_numpy(),
+        df[["ux", "uy", "uz"]].to_numpy(),
+    )
 
 
 class boris_push_cxx(_openggcm.tracing.boris):  # type: ignore[misc]
@@ -175,7 +168,7 @@ class boris_push_cxx(_openggcm.tracing.boris):  # type: ignore[misc]
             dt_max (float | None): Maximum time step for the integration.
             dt_max_gyro (float): Maximum time step as fraction of the gyroperiod.
         """
-        prts = particles_cxx(prts_df)
+        prts = particles_cxx_from_pandas(prts_df)
         super().push(
             prts,
             t_final=t_final,
